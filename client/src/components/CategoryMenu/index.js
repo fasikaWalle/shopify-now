@@ -5,9 +5,11 @@ import { useStoreContext } from "../../utils/GlobalState";
 import {
   UPDATE_CATEGORIES,
   UPDATE_CURRENT_CATEGORY,
+  UPDATE_PRODUCTS,
 } from "../../utils/actions";
+import { idbPromise } from "../../utils/helpers";
 function CategoryMenu() {
-  const { data: categoryData } = useQuery(QUERY_CATEGORIES);
+  const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
   const [state, dispatch] = useStoreContext();
   const { categories } = state;
   // const categories = categoryData?.categories || [];
@@ -16,6 +18,16 @@ function CategoryMenu() {
       dispatch({
         type: UPDATE_CATEGORIES,
         categories: categoryData.categories,
+      });
+      categoryData.categories.forEach((category) => {
+        idbPromise("categories", "put", category);
+      });
+    } else if (!loading) {
+      idbPromise("categories", "get").then((categories) => {
+        dispatch({
+          type: UPDATE_CATEGORIES,
+          categories: categories,
+        });
       });
     }
   }, [categoryData, dispatch]);

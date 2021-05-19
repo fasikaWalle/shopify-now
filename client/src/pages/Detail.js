@@ -10,7 +10,9 @@ import {
   UPDATE_PRODUCTS,
   ADD_TO_CART,
   REMOVE_FROM_CART,
+  UPDATE_CART_QUANTITY,
 } from "../utils/actions";
+import { idbPromise } from "../utils/helpers";
 function Detail() {
   const { id } = useParams();
   const [state, dispatch] = useStoreContext();
@@ -26,20 +28,50 @@ function Detail() {
         type: UPDATE_PRODUCTS,
         products: data.products,
       });
+      data.products.forEach((product) => {
+        idbPromise("products", "put", product);
+      });
+    } else if (!loading) {
+      idbPromise("products", "get").then((indexedproducts) => {
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: indexedproducts,
+        });
+      });
     }
-  }, [products, id, data, dispatch]);
+  }, [products, id, data, dispatch, loading]);
 
   const addToCart = () => {
-    dispatch({
-      type: ADD_TO_CART,
-      product: { ...currentProduct, purchaseQuantity: 1 },
-      cartOpen: true,
-    });
+    const ItemInCart = cart.find((cartItem) => cartItem._id === id);
+    if (ItemInCart) {
+      dispatch({
+        type: UPDATE_CART_QUANTITY,
+        _id: id,
+        purchaseQuantity: parseInt(ItemInCart.purchaseQuantity) + 1,
+      });
+      idbPromise("cart", "put", {
+        ...ItemInCart,
+        purchaseQuantity: parseInt(ItemInCart.purchaseQuantity) + 1,
+      });
+    } else {
+      dispatch({
+        type: ADD_TO_CART,
+        product: { ...currentProduct, purchaseQuantity: 1 },
+        cartOpen: true,
+      });
+      idbPromise("cart", "put", {
+        ...currentProduct,
+        purchaseQuantity: 1,
+      });
+    }
   };
   const removeFromCart = () => {
     dispatch({
       type: REMOVE_FROM_CART,
       _id: currentProduct._id,
+    });
+    idbPromise("cart", "delete", {
+      ...currentProduct,
     });
   };
 
