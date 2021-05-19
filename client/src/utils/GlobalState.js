@@ -9,6 +9,8 @@ const StoreProvider = ({ value = [], ...props }) => {
     //instanitate our global state
     products: [],
     categories: [],
+    cart: [],
+    cartOpen: false,
     currentCategory: "",
   });
   //use this to confirm it works
